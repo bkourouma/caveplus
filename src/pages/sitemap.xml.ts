@@ -1,8 +1,9 @@
 import type { GetServerSideProps } from "next";
 import { getSitemapData } from "@/lib/server/catalog";
+import { getSiteUrl } from "@/lib/utils";
 
 export const getServerSideProps: GetServerSideProps = async ({ res }) => {
-  const baseUrl = process.env.SITE_URL || "https://caveplus.ci";
+  const baseUrl = getSiteUrl();
   const staticPages = ["/", "/catalogue", "/a-propos", "/localisation"];
   const { categories, products } = await getSitemapData();
   const urls = [

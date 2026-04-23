@@ -3,6 +3,7 @@ import { promisify } from "util";
 import { Role } from "@prisma/client";
 import { sendTransactionalEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { getAuthBaseUrl } from "@/lib/utils";
 
 const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
 const isDevelopment = process.env.NODE_ENV !== "production";
@@ -170,7 +171,7 @@ function hashResetToken(token: string) {
 }
 
 export async function requestPasswordReset(email: string) {
-  const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const siteUrl = getAuthBaseUrl();
 
   if (!hasDatabaseUrl) {
     return { ok: true };

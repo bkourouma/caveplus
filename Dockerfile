@@ -19,14 +19,14 @@ FROM base AS builder
 ARG NEXT_PUBLIC_SITE_URL=https://caveplus.ci
 ARG NEXTAUTH_URL=https://caveplus.ci
 
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
-ENV SITE_URL=$NEXT_PUBLIC_SITE_URL
-
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npx prisma generate && npm run build
+RUN export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://caveplus.ci}" \
+  && export NEXTAUTH_URL="${NEXTAUTH_URL:-$NEXT_PUBLIC_SITE_URL}" \
+  && export SITE_URL="$NEXT_PUBLIC_SITE_URL" \
+  && npx prisma generate \
+  && npm run build
 
 FROM base AS runner
 
