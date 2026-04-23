@@ -1,0 +1,13 @@
+node_modules
+.next
+.env
+.env.local
+.env.production
+coverage
+dist
+output
+tmp-*.css
+tmp-*.js
+001 stop-ophtaclinic.bat
+*.log
+tsconfig.tsbuildinfo

@@ -1,0 +1,112 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      NEXTAUTH_SECRET: ci-build-secret-not-for-production
+      NEXTAUTH_URL: http://localhost:3400
+      SITE_URL: http://localhost:3400
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - run: npm install --ignore-scripts
+      - run: npm run prisma:generate
+      - run: npm run audit
+      - run: npm run typecheck
+      - run: npm run build
+
+  build-and-deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY_IMAGE: ghcr.io/bkourouma/caveplus
+      DEPLOY_HOST: ${{ secrets.VPS_HOST }}
+      DEPLOY_PORT: 2222
+      DEPLOY_USER: ${{ secrets.VPS_USER }}
+      DEPLOY_APP_DIR: /home/deployer/apps/caveplus
+      DEPLOY_ENV_FILE: /home/deployer/apps/caveplus/.env.production
+      DEPLOY_CONTAINER_NAME: caveplus-app
+      DEPLOY_PORT_INTERNAL: 3400
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      NEXTAUTH_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_SITE_URL="${{ env.NEXT_PUBLIC_SITE_URL }}" \
+            --build-arg NEXTAUTH_URL="${{ env.NEXTAUTH_URL }}" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            -t ${{ env.REGISTRY_IMAGE }}:latest \
+            -t ${{ env.REGISTRY_IMAGE }}:${{ github.sha }} \
+            .
+          docker push ${{ env.REGISTRY_IMAGE }}:latest
+          docker push ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.DEPLOY_HOST }}
+          port: ${{ env.DEPLOY_PORT }}
+          username: ${{ env.DEPLOY_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          timeout: 30m
+          command_timeout: 30m
+          script: |
+            set -e
+            mkdir -p "${{ env.DEPLOY_APP_DIR }}"
+            if [ ! -f "${{ env.DEPLOY_ENV_FILE }}" ]; then
+              echo "Missing env file at ${{ env.DEPLOY_ENV_FILE }}"
+              exit 1
+            fi
+            docker pull ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+            docker rm -f ${{ env.DEPLOY_CONTAINER_NAME }} || true
+            docker run -d \
+              --name ${{ env.DEPLOY_CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p 127.0.0.1:${{ env.DEPLOY_PORT_INTERNAL }}:${{ env.DEPLOY_PORT_INTERNAL }} \
+              --env-file ${{ env.DEPLOY_ENV_FILE }} \
+              -e HOSTNAME=0.0.0.0 \
+              -e NEXTAUTH_URL="${{ env.NEXTAUTH_URL }}" \
+              -e NEXT_PUBLIC_SITE_URL="${{ env.NEXT_PUBLIC_SITE_URL }}" \
+              -e NODE_ENV=production \
+              -e PORT=${{ env.DEPLOY_PORT_INTERNAL }} \
+              -e SITE_URL="${{ env.NEXT_PUBLIC_SITE_URL }}" \
+              ${{ env.REGISTRY_IMAGE }}:${{ github.sha }}
+            docker network connect app_medicpro-network ${{ env.DEPLOY_CONTAINER_NAME }} || true
+            for i in $(seq 1 30); do
+              if curl -fsSI http://127.0.0.1:${{ env.DEPLOY_PORT_INTERNAL }}/ >/dev/null && \
+                 curl -fsSI http://127.0.0.1:${{ env.DEPLOY_PORT_INTERNAL }}/api/health >/dev/null; then
+                break
+              fi
+              sleep 3
+            done
+            curl -fsSI http://127.0.0.1:${{ env.DEPLOY_PORT_INTERNAL }}/ >/dev/null
+            curl -fsSI http://127.0.0.1:${{ env.DEPLOY_PORT_INTERNAL }}/api/health >/dev/null
+            docker image prune -f

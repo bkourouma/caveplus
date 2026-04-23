@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.codex
+.env
+.env.local
+.env.production
+coverage
+dist
+docs
+node_modules
+output
+tmp-*.css
+tmp-*.js
+*.log
