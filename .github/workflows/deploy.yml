@@ -44,8 +44,8 @@ jobs:
       DEPLOY_ENV_FILE: /home/deployer/apps/caveplus/.env.production
       DEPLOY_CONTAINER_NAME: caveplus-app
       DEPLOY_PORT_INTERNAL: 3400
-      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL != '' && secrets.NEXT_PUBLIC_SITE_URL || 'https://caveplus.ci' }}
-      NEXTAUTH_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL != '' && secrets.NEXT_PUBLIC_SITE_URL || 'https://caveplus.ci' }}
+      NEXT_PUBLIC_SITE_URL: https://caveplus.allianceconsultants.net
+      NEXTAUTH_URL: https://caveplus.allianceconsultants.net
 
     steps:
       - uses: actions/checkout@v4

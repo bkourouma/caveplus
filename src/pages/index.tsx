@@ -137,7 +137,7 @@ export default function HomePage({
           "@context": "https://schema.org",
           "@type": "Store",
           name: "CavePlus",
-          url: "https://caveplus.ci",
+          url: "https://caveplus.allianceconsultants.net",
           address: {
             "@type": "PostalAddress",
             addressLocality: "Abidjan",

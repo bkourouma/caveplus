@@ -15,7 +15,7 @@ export function Seo({
   title,
   description,
   pathname,
-  imageUrl = "https://caveplus.ci/og-cover.jpg",
+  imageUrl = "https://caveplus.allianceconsultants.net/og-cover.jpg",
   robots = "index,follow",
   type = "website",
   jsonLd

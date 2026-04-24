@@ -16,13 +16,13 @@ RUN npm install --ignore-scripts
 
 FROM base AS builder
 
-ARG NEXT_PUBLIC_SITE_URL=https://caveplus.ci
-ARG NEXTAUTH_URL=https://caveplus.ci
+ARG NEXT_PUBLIC_SITE_URL=https://caveplus.allianceconsultants.net
+ARG NEXTAUTH_URL=https://caveplus.allianceconsultants.net
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://caveplus.ci}" \
+RUN export NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://caveplus.allianceconsultants.net}" \
   && export NEXTAUTH_URL="${NEXTAUTH_URL:-$NEXT_PUBLIC_SITE_URL}" \
   && export SITE_URL="$NEXT_PUBLIC_SITE_URL" \
   && npx prisma generate \

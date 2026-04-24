@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-const DEFAULT_SITE_URL = "https://caveplus.ci";
+const DEFAULT_SITE_URL = "https://caveplus.allianceconsultants.net";
 const DEFAULT_DEV_URL = "http://localhost:3000";
 
 export function cn(...inputs: ClassValue[]) {

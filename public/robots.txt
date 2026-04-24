@@ -9,4 +9,4 @@ Disallow: /panier
 Disallow: /auth/
 Disallow: /*?*
 
-Sitemap: https://caveplus.ci/sitemap.xml
+Sitemap: https://caveplus.allianceconsultants.net/sitemap.xml
